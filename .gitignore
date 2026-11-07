@@ -1,5 +1,46 @@
+# ---- dependencies ----
 node_modules/
-*.log
-.DS_Store
+.pnp.*
+.pnp.js
+
+# ---- build / test output ----
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+test/tmp/
+tmp/
+.cache/
+
+# ---- npm pack artifacts ----
 *.tgz
 package-contents.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- local config & secrets ----
+.npmrc
+.npmrc.*
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- editors / OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# ---- logs ----
+*.log
+logs/
