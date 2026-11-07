@@ -138,7 +138,7 @@ dsh plugin --profile desktop add .
 ## Development
 
 ```powershell
-npm test    # node --test "test/*.test.mjs"
+npm test    # node test/run.mjs
 npm run check
 ```
 

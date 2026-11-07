@@ -56,8 +56,8 @@
     "node": ">=20.3"
   },
   "scripts": {
-    "check": "node --check lib/index.js",
-    "test": "node --test \"test/*.test.mjs\"",
+    "check": "node --check lib/index.js && node --check test/run.mjs",
+    "test": "node test/run.mjs",
     "prepack": "npm run check && npm test",
     "prepublishOnly": "npm run check && npm test"
   }
