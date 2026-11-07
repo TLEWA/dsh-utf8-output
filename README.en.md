@@ -1,0 +1,154 @@
+# dsh-utf8-output
+
+[![CI](https://github.com/TLEWA/dsh-utf8-output/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEWA/dsh-utf8-output/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/dsh-utf8-output.svg)](https://www.npmjs.com/package/dsh-utf8-output)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[简体中文](README.md) · [English](README.en.md)
+
+Fixes mojibake in [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) subprocess output on Windows.
+
+What it looks like without the plugin:
+
+```text
+����λ�� ��:1 �ַ�: 134
++ ... lect-Object ProcessId,CreationDate,@{n='MB';e={[math]::Round(/usr/bin ...
+```
+
+With the plugin the same command reads normally:
+
+```text
+所在位置 行:1 字符: 134
++ ... lect-Object ProcessId,CreationDate,@{n='MB';e={[math]::Round($_.WorkingSetSize/1MB)}} ...
+```
+
+## Root cause
+
+The DSH subprocess service (`@deepseek-ai/dsh-subprocess-local`) decodes the **raw bytes** of a
+child's stdout/stderr with a bare `Buffer#toString("utf8")`:
+
+```js
+readFrom(fromByte) {
+  return { text: buffer.toString("utf8"), ... };
+}
+```
+
+On Windows, programs under `cmd.exe` / `powershell.exe` usually emit their **OEM code page**:
+
+| System language | Code page | Encoding |
+| --- | --- | --- |
+| Simplified Chinese | 936 | GBK |
+| Traditional Chinese | 950 | Big5 |
+| Japanese | 932 | CP932 |
+| Korean | 949 | CP949 |
+
+Those bytes are not valid UTF-8, so every illegal sequence becomes `U+FFFD` (`�`) and the original
+information is irreversibly lost. The bug is neither in the bash tool nor in the command itself.
+
+## How it works
+
+The plugin does not modify any core file. It hooks the cordis `subprocess` service:
+
+1. `apply(ctx)` grabs the `subprocess` service and wraps its `spawn()`;
+2. every handle exposes `handle.collected.stdout` / `.stderr` — `OutputCollector` instances that
+   keep the raw chunks;
+3. the plugin replaces their `readFrom()` and `finalize()` so the retained bytes are re-decoded
+   before anything upstream sees the text.
+
+Decoding order:
+
+| Step | Test | Result |
+| --- | --- | --- |
+| 1 | strict UTF-8 (`fatal: true`) decodes | returned as-is, byte-identical |
+| 2 | only the window edges are cut (≤3 stray bytes), the rest is clean UTF-8 | lenient UTF-8 (one `U+FFFD` at the edge) |
+| 3 | GB18030 decodes strictly (skipping 1–3 misaligned bytes if needed) | decoded as GBK |
+| 4 | none of the above | original result, never worse than stock |
+
+Step 2 is the important one: the collector keeps only an in-memory tail window, so window edges
+always cut characters. Treating that edge damage as "not UTF-8" is exactly how naive fixes turn a
+large block of perfectly good Chinese into garbage.
+
+## Install
+
+Requirements:
+
+- DSH `0.2.0` or newer;
+- a core whose `OutputCollector` exposes `snapshot()` (0.2.x desktop) or the `chunks` / `total`
+  fields (early builds such as `@deepseek-ai/dsh-subprocess-local` 0.0.1-rc.1).
+
+### From npm (recommended)
+
+1. Sidebar **Plugins** → **Install plugin**, enter:
+
+   ```text
+   dsh-utf8-output
+   ```
+
+2. Restart DSH (host plugins load when the profile starts).
+
+Command-line equivalent:
+
+```powershell
+dsh plugin --profile desktop add dsh-utf8-output
+```
+
+### From GitHub
+
+```text
+https://github.com/TLEWA/dsh-utf8-output
+```
+
+Pinned to a tag:
+
+```powershell
+dsh plugin --profile desktop add github:TLEWA/dsh-utf8-output#v0.1.0
+```
+
+### From source
+
+```powershell
+git clone https://github.com/TLEWA/dsh-utf8-output.git
+cd dsh-utf8-output
+npm test
+dsh plugin --profile desktop add .
+```
+
+## Scope
+
+- Only the **decoding** of subprocess output changes; commands, arguments, exit codes, timeouts and
+  `spillPath` are untouched;
+- pure UTF-8 / ASCII output is byte-identical (step 1 returns immediately);
+- every caller that goes through the `subprocess` service is covered (`ops_bash`, `bash`, `pwsh`,
+  …), including service references other plugins already hold (cordis hands out proxies over one
+  instance, so one patch is enough);
+- re-loading the plugin or calling `apply()` twice is idempotent.
+
+## Known limitations
+
+- byte sequences that are **valid UTF-8 and valid GBK at once** cannot be told apart (UTF-8 wins);
+  this is very unlikely for meaningful text;
+- mixed encodings (part UTF-8, part GBK) are judged as a whole, with no per-segment sniffing;
+- UTF-16 / UTF-32 output is not handled;
+- a window that starts mid-character can still show a single `U+FFFD` — same as stock behaviour,
+  never worse;
+- each read re-decodes the whole retained window, so a huge stream polled at high frequency is
+  O(n²); `ops_bash` reads once and is unaffected;
+- other platforms do not have this bug; the plugin is effectively a no-op there (step 1 still runs).
+
+## Development
+
+```powershell
+npm test    # node --test "test/*.test.mjs"
+npm run check
+```
+
+Coverage:
+
+- `test/decode.test.mjs`: decoding decisions (UTF-8 tail cut, large UTF-8 head cut, misaligned GBK
+  head, dangling GBK tail byte, oversized GBK windows, ASCII passthrough);
+- `test/collector.test.mjs`: service wiring (`spawn` wrapping, `readFrom` / `finalize` re-decoding,
+  idempotency, fallback to `chunks` / `total` on cores without `snapshot()`).
+
+## License
+
+MIT © 2026 TLEWA

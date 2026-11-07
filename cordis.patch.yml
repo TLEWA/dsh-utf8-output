@@ -1,0 +1,10 @@
+# dsh-utf8-output bundle patch
+#
+# Install into a profile with:
+#
+#   dsh plugin --profile <name> add dsh-utf8-output
+#
+# The profile boot composes this patch and mounts the host row below.
+- insert:
+    - id: utf8-output
+      name: 'dsh-utf8-output'

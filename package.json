@@ -1,0 +1,64 @@
+{
+  "name": "dsh-utf8-output",
+  "version": "0.1.0",
+  "description": "Fix garbled (GBK/CP936/CP932) output from DSH host subprocesses on Windows by re-decoding collected bytes before they reach the agent. 修复 Windows 下 DSH 子进程 GBK/CP936 输出乱码：在字节被解码前接管，重新按实际编码解码。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "utf8",
+    "encoding",
+    "gbk",
+    "cp936",
+    "windows",
+    "subprocess",
+    "mojibake"
+  ],
+  "author": "TLEWA",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TLEWA/dsh-utf8-output.git"
+  },
+  "homepage": "https://github.com/TLEWA/dsh-utf8-output#readme",
+  "bugs": {
+    "url": "https://github.com/TLEWA/dsh-utf8-output/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "engines": {
+      "dsh": ">=0.2.0"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=20.3"
+  },
+  "scripts": {
+    "check": "node --check lib/index.js",
+    "test": "node --test \"test/*.test.mjs\"",
+    "prepack": "npm run check && npm test",
+    "prepublishOnly": "npm run check && npm test"
+  }
+}
