@@ -44,3 +44,19 @@ desktop.ini
 # ---- logs ----
 *.log
 logs/
+
+# ---- local working area (never published) ----
+scratch/
+.dsh/
+.dsh-meow/
+*.sqlite
+*.sqlite3
+*.db-journal
+e2e/
+extract/
+upstream/
+asar-index.json
+extracted-output.js
+*.asar
+*.asar.bak*
+app.asar.unpacked/
