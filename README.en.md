@@ -128,11 +128,13 @@ dsh plugin --profile desktop add .
 - byte sequences that are **valid UTF-8 and valid GBK at once** cannot be told apart (UTF-8 wins);
   this is very unlikely for meaningful text;
 - mixed encodings (part UTF-8, part GBK) are judged as a whole, with no per-segment sniffing;
-- UTF-16 / UTF-32 output is not handled;
+- UTF-16 / UTF-32 output is not handled: UTF-16LE text is full of NUL bytes and decodes to
+  unreadable characters (never worse than stock);
 - a window that starts mid-character can still show a single `U+FFFD` — same as stock behaviour,
   never worse;
-- each read re-decodes the whole retained window, so a huge stream polled at high frequency is
-  O(n²); `ops_bash` reads once and is unaffected;
+- each read still decodes the whole retained window; the edge check is byte-level, decoders are
+  reused and repeated identical reads hit a one-entry memo, so a 2.8KB window costs ~10µs per read,
+  but a huge stream polled at high frequency remains O(n²);
 - other platforms do not have this bug; the plugin is effectively a no-op there (step 1 still runs).
 
 ## Development

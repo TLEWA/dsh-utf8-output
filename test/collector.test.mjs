@@ -141,3 +141,84 @@ test("legacy collector keeps a large gbk window clean", () => {
 	assert.equal(count(r.text), 0);
 	assert.equal(cjk(r.text), 2048);
 });
+/* ---- robustness: window races, malformed state, lifecycle ---- */
+
+test("a window slide between read and snapshot does not duplicate bytes", () => {
+	const collector = (() => {
+		let full = Buffer.from("a".repeat(100), "utf8");
+		let appended = false;
+		return {
+			snapshot() {
+				const bytes = full.subarray(full.length - 60);
+				return { bytes, totalBytes: full.length };
+			},
+			readFrom(fromByte) {
+				const windowStart = full.length - 60;
+				const bytes = full.subarray(windowStart);
+				const result = { text: bytes.subarray(fromByte - windowStart).toString("utf8"), lossy: fromByte < windowStart, nextOffset: full.length };
+				if (!appended) {
+					appended = true;
+					full = Buffer.concat([full, Buffer.from("bbbbbbbb")]);
+				}
+				return result;
+			},
+			finalize() {
+				return { text: "", truncated: false };
+			},
+		};
+	})();
+	const service = { spawn: () => ({ collected: { stdout: collector, stderr: null } }) };
+	apply({ get: (name) => (name === "subprocess" ? service : undefined) });
+	const r = service.spawn().collected.stdout.readFrom(44);
+	assert.equal(r.text.length, 56, "only the requested slice, never the larger tail");
+	assert.equal(r.lossy, false);
+});
+
+test("a total shorter than the retained window does not shift offsets", () => {
+	const bytes = Buffer.from("测试中文", "utf8");
+	const collector = {
+		snapshot: () => ({ bytes, totalBytes: 4 }),
+		readFrom: () => ({ text: bytes.toString("utf8"), lossy: false, nextOffset: bytes.length }),
+		finalize: () => ({ text: bytes.toString("utf8"), truncated: false }),
+	};
+	const service = { spawn: () => ({ collected: { stdout: collector, stderr: null } }) };
+	apply({ get: (name) => (name === "subprocess" ? service : undefined) });
+	assert.equal(service.spawn().collected.stdout.readFrom(0).text, "测试中文");
+	assert.equal(service.spawn().collected.stdout.finalize().text, "测试中文");
+});
+
+test("a non-finite offset leaves the stock result untouched", () => {
+	const ctx = makeCtx(GBK_ZHONGWEN);
+	const stdout = ctx.get("subprocess").spawn().collected.stdout;
+	const r = stdout.readFrom(Number.NaN);
+	assert.equal(r.text, GBK_ZHONGWEN.toString("utf8"), "no whole-tail re-send");
+});
+
+test("a frozen service warns once and keeps the stock behaviour", () => {
+	const warnings = [];
+	const service = Object.freeze({ spawn: () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } }) });
+	const ctx = { get: () => service, logger: { warn: (...args) => warnings.push(args) } };
+	assert.doesNotThrow(() => apply(ctx));
+	assert.equal(warnings.length, 1);
+	assert.match(String(warnings[0][0]), /frozen/);
+});
+
+test("a promise-returning spawn is patched after it settles", async () => {
+	const service = { spawn: async () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } }) };
+	apply({ get: () => service });
+	const handle = await service.spawn();
+	assert.equal(handle.collected.stdout.readFrom(0).text, "测试中文");
+});
+
+test("dispose restores the original spawn", () => {
+	const collected = makeCollector(GBK_ZHONGWEN);
+	const service = { spawn: () => ({ collected: { stdout: collected, stderr: null } }) };
+	const handlers = {};
+	const ctx = { get: () => service, on: (event, fn) => { handlers[event] = fn; } };
+	const original = service.spawn;
+	apply(ctx);
+	assert.notEqual(service.spawn, original);
+	handlers.dispose();
+	assert.equal(service.spawn, original);
+	assert.equal(service.spawn().collected.stdout.readFrom(0).text, GBK_ZHONGWEN.toString("utf8"));
+});
