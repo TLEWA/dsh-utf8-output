@@ -141,6 +141,16 @@ npm run check
 - `test/collector.test.mjs`：服务接线（`spawn` 包装、`readFrom` / `finalize` 重解码、
   幂等性、没有 `snapshot()` 的旧内核回退到 `chunks` / `total`）。
 
+## 我的其他 DSH 项目
+
+修复乱码只是 DSH 的一小块。下面这些插件都由我维护，按需取用。
+
+- **[dsh-sidebar-row-menu](https://github.com/TLEWA/dsh-sidebar-row-menu)** —— 侧栏工作区行与会话行的右键菜单：条目并入宿主原生菜单，会话正文右键还能把工具条按钮列成菜单。
+- **[dsh-sidebar-organizer](https://github.com/TLEWA/dsh-sidebar-organizer)** —— 七区域布局整理器：侧栏、侧栏底部、对话标签、输入框、会话头部、右侧栏、设置导航都能长按拖拽排序，面板可以收进「更多」再拖回来。
+- **[dsh-better-choice](https://github.com/TLEWA/dsh-better-choice)** —— `ask_user_question` 增强：右键选项补备注，选之前先拿同一份上下文旁问模型一句。
+- **[dsh-if](https://github.com/TLEWA/dsh-if)** —— `/if` 命令：让模型结合上文判断条件，成立才把下面的指令作为用户消息发出。
+- **[dsh-opencode-go-router](https://github.com/TLEWA/dsh-opencode-go-router)** —— 上下文折叠或系统提示被重写后轮换 OpenCode Go 路由，少丢一点提示缓存。
+
 ## 许可证
 
 MIT © 2026 TLEWA

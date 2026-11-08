@@ -151,6 +151,16 @@ Coverage:
 - `test/collector.test.mjs`: service wiring (`spawn` wrapping, `readFrom` / `finalize` re-decoding,
   idempotency, fallback to `chunks` / `total` on cores without `snapshot()`).
 
+## Other DSH projects I work on
+
+Fixing mojibake is only one corner of DSH. These are the other plugins I maintain — take what fits.
+
+- **[dsh-sidebar-row-menu](https://github.com/TLEWA/dsh-sidebar-row-menu)** — right-click menus for sidebar workspace and session rows: entries join the native host menu, and a right-click in the conversation body can turn the toolbar buttons into a menu.
+- **[dsh-sidebar-organizer](https://github.com/TLEWA/dsh-sidebar-organizer)** — a layout organizer for seven regions: sidebar, sidebar footer, conversation tabs, composer, session header, right panel, and settings navigation all support long-press drag to reorder, and panels can be tucked into "More".
+- **[dsh-better-choice](https://github.com/TLEWA/dsh-better-choice)** — an `ask_user_question` enhancement: right-click an option to add a note, or ask the model a side question with the same context before choosing.
+- **[dsh-if](https://github.com/TLEWA/dsh-if)** — the `/if` command: let the model judge a condition from prior context, then send the instruction below it as a user message only when it holds.
+- **[dsh-opencode-go-router](https://github.com/TLEWA/dsh-opencode-go-router)** — rotates OpenCode Go routing after a context fold or a system-prompt rewrite, so less of the prompt cache is lost.
+
 ## License
 
 MIT © 2026 TLEWA
