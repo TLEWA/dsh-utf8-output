@@ -60,3 +60,4 @@ extracted-output.js
 *.asar
 *.asar.bak*
 app.asar.unpacked/
+.ci/

@@ -14,7 +14,8 @@
     "README.md",
     "README.en.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.en.md"
   ],
   "keywords": [
     "deepseek",
@@ -53,12 +54,13 @@
     }
   },
   "engines": {
-    "node": ">=20.3"
+    "node": ">=20.3",
+    "dsh": ">=0.2.0"
   },
   "scripts": {
     "check": "node --check lib/index.js && node --check test/run.mjs",
     "test": "node test/run.mjs",
     "prepack": "npm run check && npm test",
-    "prepublishOnly": "npm run check && npm test"
+    "prepublishOnly": "npx --yes --package=github:TLEWA/dsh-plugin-ci#v1 dsh-ci-gate --prepublish"
   }
 }
