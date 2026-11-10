@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 接入 Codex PR 公共审阅规则与本仓重点，保留现有 CI、人工批准和发布行为。
+
 未发布修复 / Unreleased fixes.
 
 - 修复 `dispose` 只还原 `spawn`、没有清除 `__utf8OutputBridged` 的问题：插件热重载后第二次 `apply()` 会直接返回，子进程输出静默退回乱码。现在 `dispose` 同时清除桥接标记，重新加载会再次接管；重复 `apply()` 仍保持幂等。

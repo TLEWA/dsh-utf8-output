@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Adopt shared Codex PR review rules and repository-specific review guidance; preserve existing CI, human approval, and release behavior.
+
 - Fixed `dispose` restoring `spawn` without clearing the `__utf8OutputBridged` marker: after a plugin hot reload the next `apply()` returned early and output silently fell back to mojibake. `dispose` now clears the marker too, so a reload takes over again while repeated `apply()` stays idempotent.
 - Platform scope: `apply()` now installs the patch only on Windows (`process.platform === "win32"`); other platforms are a strict no-op, so Latin-1/CP1252 bytes are no longer decoded as GBK (`cafét` used to become `caf閠`).
 - Docs and package description corrected: only GB18030/GBK/CP936 is implemented; Big5 (950) / CP932 / CP949 are no longer implied to work and keep the stock (mojibake) output.

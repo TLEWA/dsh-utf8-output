@@ -179,3 +179,7 @@ Fixing mojibake is only one corner of DSH. These are the other plugins I maintai
 ## License
 
 MIT © 2026 TLEWA
+
+## Codex PR review
+
+This repository adopts the v1 shared review block in AGENTS.md from [central CI](https://github.com/TLEWA/dsh-plugin-ci). Cloud Codex reviews PRs and new commits; maintainers retain final approval and merging. Review results must cover the latest commit. Review consumes subscription usage; use `@codex review` for missing results.
