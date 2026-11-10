@@ -42,6 +42,10 @@ On Windows, programs under `cmd.exe` / `powershell.exe` usually emit their **OEM
 | Japanese | 932 | CP932 |
 | Korean | 949 | CP949 |
 
+> The plugin implements **936 / GBK / GB18030 / CP936** only. There is no decoder for 950 (Big5),
+> 932 (CP932) or 949 (CP949): output in those code pages keeps the stock result (mojibake) and is
+> never guessed as GB18030, so no new wrong characters are introduced.
+
 Those bytes are not valid UTF-8, so every illegal sequence becomes `U+FFFD` (`�`) and the original
 information is irreversibly lost. The bug is neither in the bash tool nor in the command itself.
 
@@ -121,21 +125,30 @@ dsh plugin --profile desktop add .
 - every caller that goes through the `subprocess` service is covered (`ops_bash`, `bash`, `pwsh`,
   …), including service references other plugins already hold (cordis hands out proxies over one
   instance, so one patch is enough);
-- re-loading the plugin or calling `apply()` twice is idempotent.
+- re-loading the plugin or calling `apply()` twice is idempotent; `dispose` restores `spawn` and
+  clears the bridge marker, so a reload takes over again.
 
 ## Known limitations
 
 - byte sequences that are **valid UTF-8 and valid GBK at once** cannot be told apart (UTF-8 wins);
   this is very unlikely for meaningful text;
+- a GBK window can start on the trail byte of the previous character and the remaining fragment can
+  still be valid GBK on its own — e.g. `d0 ce c4 61 62 63` is both the tail of `中文abc` from byte
+  2 and a complete `形腶bc`. The collector exposes no character-alignment information, so the plugin
+  takes the directly decodable result and does not repair such head drift (no heuristic is used, to
+  avoid introducing new wrong characters);
 - mixed encodings (part UTF-8, part GBK) are judged as a whole, with no per-segment sniffing;
 - UTF-16 / UTF-32 output is not handled: UTF-16LE text is full of NUL bytes and decodes to
   unreadable characters (never worse than stock);
 - a window that starts mid-character can still show a single `U+FFFD` — same as stock behaviour,
   never worse;
+- only GB18030/GBK/CP936 is implemented; Big5 (950), CP932 and CP949 are out of scope and keep the
+  stock output;
 - each read still decodes the whole retained window; the edge check is byte-level, decoders are
   reused and repeated identical reads hit a one-entry memo, so a 2.8KB window costs ~10µs per read,
   but a huge stream polled at high frequency remains O(n²);
-- other platforms do not have this bug; the plugin is effectively a no-op there (step 1 still runs).
+- other platforms do not have this bug: `apply()` returns immediately, installs nothing and leaves the
+  original buffers/strings untouched.
 
 ## Development
 
