@@ -1,6 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { apply } from "../lib/index.js";
+import { apply as install } from "../lib/index.js";
+
+// The patch is Windows-only (AGENTS.md). Run every wiring test as win32 so the
+// suite is meaningful on Linux CI, and let the platform tests below switch the
+// reported platform explicitly.
+const withPlatform = (platform, fn) => {
+	const original = process.platform;
+	if (original !== platform) Object.defineProperty(process, "platform", { value: platform, configurable: true });
+	try {
+		return fn();
+	} finally {
+		if (original !== platform) Object.defineProperty(process, "platform", { value: original, configurable: true });
+	}
+};
+const apply = (ctx) => withPlatform("win32", () => install(ctx));
 
 const REPLACEMENT = "\uFFFD";
 const GBK_ZHONGWEN = Buffer.from([0xb2, 0xe2, 0xca, 0xd4, 0xd6, 0xd0, 0xce, 0xc4]);
@@ -221,4 +235,43 @@ test("dispose restores the original spawn", () => {
 	handlers.dispose();
 	assert.equal(service.spawn, original);
 	assert.equal(service.spawn().collected.stdout.readFrom(0).text, GBK_ZHONGWEN.toString("utf8"));
+});
+
+test("dispose clears the bridge marker so a reload re-installs the patch", () => {
+	const collected = makeCollector(GBK_ZHONGWEN);
+	const service = { spawn: () => ({ collected: { stdout: collected, stderr: null } }) };
+	const handlers = {};
+	const ctx = { get: () => service, on: (event, fn) => { handlers[event] = fn; } };
+	const original = service.spawn;
+	apply(ctx);
+	handlers.dispose();
+	assert.equal(service.__utf8OutputBridged, undefined, "dispose must not leave a stale bridge marker");
+	apply(ctx);
+	assert.equal(service.__utf8OutputBridged, true);
+	assert.notEqual(service.spawn, original, "a reload must bridge again");
+	assert.equal(service.spawn().collected.stdout.readFrom(0).text, "测试中文");
+	handlers.dispose();
+	assert.equal(service.spawn, original);
+});
+
+test("apply is a no-op on non-Windows platforms", () => {
+	for (const platform of ["linux", "darwin", "freebsd"]) {
+		const service = { spawn: () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } }) };
+		const original = service.spawn;
+		withPlatform(platform, () => install({ get: () => service }));
+		assert.equal(service.spawn, original, `spawn must stay untouched on ${platform}`);
+		assert.equal(service.__utf8OutputBridged, undefined);
+		assert.equal(service.spawn().collected.stdout.readFrom(0).text, GBK_ZHONGWEN.toString("utf8"));
+	}
+});
+
+test("on win32 the bridge is installed and dispose still restores it", () => {
+	const service = { spawn: () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } }) };
+	const handlers = {};
+	const original = service.spawn;
+	apply({ get: () => service, on: (event, fn) => { handlers[event] = fn; } });
+	assert.equal(service.__utf8OutputBridged, true);
+	assert.equal(service.spawn().collected.stdout.readFrom(0).text, "测试中文");
+	handlers.dispose();
+	assert.equal(service.spawn, original);
 });

@@ -1,7 +1,7 @@
 {
   "name": "dsh-utf8-output",
   "version": "0.1.1",
-  "description": "Fix garbled (GBK/CP936/CP932) output from DSH host subprocesses on Windows by re-decoding collected bytes before they reach the agent. 修复 Windows 下 DSH 子进程 GBK/CP936 输出乱码：在字节被解码前接管，重新按实际编码解码。",
+  "description": "Fix garbled (GBK/CP936/GB18030) output from DSH host subprocesses on Windows by re-decoding collected bytes before they reach the agent. 修复 Windows 下 DSH 子进程 GBK/CP936 输出乱码：在字节被解码前接管，重新按实际编码解码。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+未发布修复 / Unreleased fixes.
+
+- 修复 `dispose` 只还原 `spawn`、没有清除 `__utf8OutputBridged` 的问题：插件热重载后第二次 `apply()` 会直接返回，子进程输出静默退回乱码。现在 `dispose` 同时清除桥接标记，重新加载会再次接管；重复 `apply()` 仍保持幂等。
+- 平台范围：`apply()` 现在只在 Windows（`process.platform === "win32"`）安装补丁；其他平台是纯 no-op，不再把 Latin-1/CP1252 字节按 GBK 解码（`cafét` 之前会变成 `caf閠`）。
+- 文档与包描述修正：明确只实现 GB18030/GBK/CP936，不再暗示支持 Big5（950）/CP932/CP949；这些代码页保持内核原样输出（乱码），不会用 GB18030 猜解。
+- 已知限制补充：GBK 窗口首字节是上一字符的 trail 字节、残片又能自成一个合法字符时（如 `d0 ce c4 61 62 63`），没有可靠判据区分错位；插件保持直接解码结果，不用启发式猜解。
+
+- Fixed `dispose` restoring `spawn` without clearing the `__utf8OutputBridged` marker: after a plugin hot reload the next `apply()` returned early and output silently fell back to mojibake. `dispose` now clears the marker too, so a reload takes over again while repeated `apply()` stays idempotent.
+- Platform scope: `apply()` now installs the patch only on Windows (`process.platform === "win32"`); other platforms are a strict no-op, so Latin-1/CP1252 bytes are no longer decoded as GBK (`cafét` used to become `caf閠`).
+- Docs and package description corrected: only GB18030/GBK/CP936 is implemented; Big5 (950) / CP932 / CP949 are no longer implied to work and keep the stock (mojibake) output.
+- Known-limitation note: when a GBK window starts on the trail byte of the previous character and the fragment happens to be valid GBK itself (e.g. `d0 ce c4 61 62 63`), the alignment is undecidable; the plugin keeps the direct decode and does not guess with heuristics.
+
 ## 0.1.1 — 2026-11-07
 
 健壮性修复 / Robustness fixes.
