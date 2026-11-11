@@ -125,8 +125,10 @@ dsh plugin --profile desktop add .
 - every caller that goes through the `subprocess` service is covered (`ops_bash`, `bash`, `pwsh`,
   …), including service references other plugins already hold (cordis hands out proxies over one
   instance, so one patch is enough);
-- re-loading the plugin or calling `apply()` twice is idempotent; `dispose` restores `spawn` and
-  clears the bridge marker, so a reload takes over again.
+- re-loading the plugin or calling `apply()` twice is idempotent; a wrapper that failed to install
+  leaves no "already bridged" marker, so the next load retries, and `dispose` restores `spawn` and
+  clears the marker only while its own wrapper is still the current `spawn`, never clobbering a
+  wrapper another instance installed later.
 
 ## Known limitations
 

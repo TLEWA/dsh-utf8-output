@@ -275,3 +275,39 @@ test("on win32 the bridge is installed and dispose still restores it", () => {
 	handlers.dispose();
 	assert.equal(service.spawn, original);
 });
+
+test("a bridge that cannot be installed leaves no marker and a later apply retries", () => {
+	const service = {};
+	const original = () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } });
+	// Extensible service, read-only own spawn: the marker can still be defined but
+	// the wrapper assignment throws in ESM strict mode.
+	Object.defineProperty(service, "spawn", { value: original, writable: false, configurable: true });
+	const warnings = [];
+	const ctx = { get: () => service, logger: { warn: (...args) => warnings.push(args) } };
+	assert.doesNotThrow(() => apply(ctx));
+	assert.equal(service.spawn, original, "the stock spawn must stay in place");
+	assert.equal(service.__utf8OutputBridged, undefined, "a failed install must not leave the marker behind");
+	assert.equal(warnings.length, 1);
+	assert.match(String(warnings[0][0]), /cannot replace/);
+
+	// Once the property is writable again (host upgrade, another plugin), the next
+	// apply must retry instead of silently trusting a stale marker.
+	Object.defineProperty(service, "spawn", { value: original, writable: true, configurable: true });
+	apply(ctx);
+	assert.equal(service.__utf8OutputBridged, true);
+	assert.notEqual(service.spawn, original, "the retry must install the wrapper");
+	assert.equal(service.spawn().collected.stdout.readFrom(0).text, "测试中文");
+});
+
+test("dispose keeps the marker when it did not restore the wrapper", () => {
+	const service = { spawn: () => ({ collected: { stdout: makeCollector(GBK_ZHONGWEN), stderr: null } }) };
+	const handlers = {};
+	apply({ get: () => service, on: (event, fn) => { handlers[event] = fn; } });
+	const bridged = service.spawn;
+	const foreign = () => bridged();
+	// Another wrapper took over the top slot; ours may still be nested under it.
+	service.spawn = foreign;
+	handlers.dispose();
+	assert.equal(service.spawn, foreign, "dispose must not clobber a foreign wrapper");
+	assert.equal(service.__utf8OutputBridged, true, "the marker describes our installed bridge and must survive");
+});

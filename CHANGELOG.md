@@ -10,6 +10,7 @@
 - 平台范围：`apply()` 现在只在 Windows（`process.platform === "win32"`）安装补丁；其他平台是纯 no-op，不再把 Latin-1/CP1252 字节按 GBK 解码（`cafét` 之前会变成 `caf閠`）。
 - 文档与包描述修正：明确只实现 GB18030/GBK/CP936，不再暗示支持 Big5（950）/CP932/CP949；这些代码页保持内核原样输出（乱码），不会用 GB18030 猜解。
 - 已知限制补充：GBK 窗口首字节是上一字符的 trail 字节、残片又能自成一个合法字符时（如 `d0 ce c4 61 62 63`），没有可靠判据区分错位；插件保持直接解码结果，不用启发式猜解。
+- 桥接安装失败不再留下“已桥接”标记：`spawn` 只读时插件没有接管，标记却留在共享服务上，之后重新加载会静默跳过、不再尝试修复。现在标记只在包装器真正装好后写入，安装失败会回滚；`dispose` 也只在确实还原了 `spawn` 时清标记，不会误删别的实例的桥接状态。
 
 - Fixed `dispose` restoring `spawn` without clearing the `__utf8OutputBridged` marker: after a plugin hot reload the next `apply()` returned early and output silently fell back to mojibake. `dispose` now clears the marker too, so a reload takes over again while repeated `apply()` stays idempotent.
 - Platform scope: `apply()` now installs the patch only on Windows (`process.platform === "win32"`); other platforms are a strict no-op, so Latin-1/CP1252 bytes are no longer decoded as GBK (`cafét` used to become `caf閠`).
