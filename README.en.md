@@ -105,7 +105,7 @@ https://github.com/TLEWA/dsh-utf8-output
 Pinned to a tag:
 
 ```powershell
-dsh plugin --profile desktop add github:TLEWA/dsh-utf8-output#v0.1.0
+dsh plugin --profile desktop add github:TLEWA/dsh-utf8-output#v0.3.0
 ```
 
 ### From source

@@ -102,7 +102,7 @@ https://github.com/TLEWA/dsh-utf8-output
 固定到标签：
 
 ```powershell
-dsh plugin --profile desktop add github:TLEWA/dsh-utf8-output#v0.1.0
+dsh plugin --profile desktop add github:TLEWA/dsh-utf8-output#v0.3.0
 ```
 
 ### 从源码安装

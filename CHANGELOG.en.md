@@ -1,8 +1,6 @@
 # Changelog
 
-## 0.2.0 — 2026-11-11
-
-- Adopt shared Codex PR review rules and repository-specific review guidance; preserve existing CI, human approval, and release behavior.
+## [0.3.0] - 2026-11-11
 
 - Fixed `dispose` restoring `spawn` without clearing the `__utf8OutputBridged` marker: after a plugin hot reload the next `apply()` returned early and output silently fell back to mojibake. `dispose` now clears the marker too, so a reload takes over again while repeated `apply()` stays idempotent.
 - Platform scope: `apply()` now installs the patch only on Windows (`process.platform === "win32"`); other platforms are a strict no-op, so Latin-1/CP1252 bytes are no longer decoded as GBK (`cafét` used to become `caf閠`).
@@ -32,3 +30,7 @@ First release.
 - Works on early cores without `snapshot()` by reading the `chunks` / `total` fields.
 - Byte-identical for pure UTF-8 / ASCII; patching and `apply()` is idempotent.
 - 19 unit tests covering decode decisions and service wiring.
+
+## 0.2.0 — 2026-11-11
+
+- Adopt shared Codex PR review rules and repository-specific review guidance; preserve existing CI, human approval, and release behavior.

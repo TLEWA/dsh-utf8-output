@@ -1,10 +1,6 @@
 # Changelog
 
-## 0.2.0 — 2026-11-11
-
-- 接入 Codex PR 公共审阅规则与本仓重点，保留现有 CI、人工批准和发布行为。
-
-未发布修复 / Unreleased fixes.
+## [0.3.0] - 2026-11-11
 
 - 修复 `dispose` 只还原 `spawn`、没有清除 `__utf8OutputBridged` 的问题：插件热重载后第二次 `apply()` 会直接返回，子进程输出静默退回乱码。现在 `dispose` 同时清除桥接标记，重新加载会再次接管；重复 `apply()` 仍保持幂等。
 - 平台范围：`apply()` 现在只在 Windows（`process.platform === "win32"`）安装补丁；其他平台是纯 no-op，不再把 Latin-1/CP1252 字节按 GBK 解码（`cafét` 之前会变成 `caf閠`）。
@@ -64,3 +60,7 @@
 - Works on early cores without `snapshot()` by reading the `chunks` / `total` fields.
 - Byte-identical for pure UTF-8 / ASCII; patching and `apply()` are idempotent.
 - 19 unit tests covering decode decisions and service wiring.
+
+## 0.2.0 — 2026-11-11
+
+- 接入 Codex PR 公共审阅规则与本仓重点，保留现有 CI、人工批准和发布行为。
