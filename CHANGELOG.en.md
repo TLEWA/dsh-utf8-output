@@ -8,6 +8,7 @@
 - Platform scope: `apply()` now installs the patch only on Windows (`process.platform === "win32"`); other platforms are a strict no-op, so Latin-1/CP1252 bytes are no longer decoded as GBK (`cafét` used to become `caf閠`).
 - Docs and package description corrected: only GB18030/GBK/CP936 is implemented; Big5 (950) / CP932 / CP949 are no longer implied to work and keep the stock (mojibake) output.
 - Known-limitation note: when a GBK window starts on the trail byte of the previous character and the fragment happens to be valid GBK itself (e.g. `d0 ce c4 61 62 63`), the alignment is undecidable; the plugin keeps the direct decode and does not guess with heuristics.
+- A failed bridge install no longer leaves the "already bridged" marker behind: with a read-only `spawn` the plugin never took over, yet the marker stayed on the shared service, so a later reload silently skipped the repair. The marker is now written only after the wrapper is installed (and rolled back on failure), and `dispose` clears it only when it actually restored `spawn`, so another instance's bridge state is never clobbered.
 
 ## 0.1.1 — 2026-11-07
 
